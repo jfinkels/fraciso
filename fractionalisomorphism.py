@@ -1,12 +1,34 @@
 #!/usr/bin/env python3
 """Algorithms for determining if two graphs are fractionally isomorphic.
 
+Example usage::
+
+    from fractionalisomorphism import Graph
+    from fractionalisomorphism import are_fractionally_isomorphic
+
+    # Create a graph G.
+    vertices = {1, 2, 3}
+    edges = {frozenset(1, 2), frozenset(2, 3), frozenset(3, 1)}
+    G = Graph(vertices, edges)
+
+    # Create a graph H.
+    #H = ...
+
+    # Determine if they are fractionally isomorphic.
+    if are_fractionally_isomorphic(G, H):
+        print('Yes')
+    else:
+        print('No')
+
 """
 from collections import namedtuple
 from functools import reduce
 from itertools import combinations
 from itertools import groupby
+from itertools import permutations
 from itertools import product
+
+__all__ = ['Graph', 'are_fractionally_isomorphic']
 
 
 def union(*sets):
@@ -32,7 +54,8 @@ def is_valid_partition(graph, partition):
     disjoint union of the blocks in the partition.
 
     """
-    return are_pairwise_disjoint(*partition) and union(*partition) == graph.V
+    return are_pairwise_disjoint(*partition) and union(*partition) == graph.V \
+        and all(len(block) > 0 for block in partition)
 
 
 def neighbors(graph, v, block=None):
@@ -155,6 +178,42 @@ def coarsest_equitable_partition(graph):
     # adaptations are possible. This is guaranteed to be the coarsest equitable
     # partition.
     return _adapt(graph, {graph.V})
+
+
+def partition_parameters(graph, partition):
+    # This ensures that every list comprehension iterates over the blocks in
+    # the same order.
+    partition_as_list = list(partition)
+    # pre-condition: each block is regular
+    vertices_per_block = [len(block) for block in partition_as_list]
+    # TODO this will raise an error if a block is empty
+    block_neighbors = [[len(neighbors(graph, block_i[0], block_j))
+                        for block_j in partition_as_list]
+                       for block_i in partition_as_list]
+    return vertices_per_block, block_neighbors
+
+
+def are_common_partitions(graph1, partition1, graph2, partition2):
+    # pre-condition: the partitions are valid and equitable
+    #
+    # `sizes` should be a list of length p and `block_neighbors` should be a
+    # list of p lists, each of length p. The innermost entries should be
+    # integers.
+    sizes1, block_neighbors1 = partition_parameters(graph1, partition1)
+    sizes2, block_neighbors2 = partition_parameters(graph2, partition2)
+    combined1 = zip(sizes1, block_neighbors1)
+    combined2 = zip(sizes2, block_neighbors2)
+    # This is an inefficient algorithm, but it is quite readable.
+    return any(perm == combined2 for perm in permutations(combined1))
+
+
+def are_fractionally_isomorphic(G, H):
+    """Returns ``True`` if and only if the graphs are fractionally isomorphic.
+
+    """
+    partition1 = coarsest_equitable_partition(G)
+    partition2 = coarsest_equitable_partition(H)
+    return are_common_partitions(G, partition1, H, partition2)
 
 
 #: A graph consisting of a set of vertices and a set of edges.
