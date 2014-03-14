@@ -48,6 +48,13 @@ from itertools import product
 __all__ = ['Graph', 'are_fractionally_isomorphic']
 
 
+def peek(s):
+    """Returns but does not remove an arbitrary element from the specified set.
+
+    """
+    return next(iter(s))
+
+
 def union(*sets):
     """Returns the union of all sets given as positional arguments."""
     # The last argument to reduce is the initializer used in the case of an
@@ -197,31 +204,94 @@ def coarsest_equitable_partition(graph):
     return _adapt(graph, {graph.V})
 
 
+# def partition_parameters(graph, partition):
+#     """Returns the parameters of the given partition.
+
+#     `graph` must be an instance of :data:`Graph`.
+
+#     `partition` must be a valid equitable partition of the specified graph.
+
+#     The parameters of the graph are a list of size **p** and a matrix (a list
+#     of lists) of size **p** by **p**, where **p** is the number of blocks in
+#     the partition. The entry at index **i** in the list is the number of
+#     vertices in the **i**th block of the partition. The entry at row **i**,
+#     column **j** of the matrix is the number of neighbors in block **j** of
+#     any fixed vertex in block **i** (since the partition is equitable, it
+#     doesn't matter which particular vertex we consider).
+
+#     """
+#     # This ensures that every list comprehension iterates over the blocks in
+#     # the same order.
+#     partition_as_list = list(partition)
+#     # pre-condition: each block is regular
+#     vertices_per_block = [len(block) for block in partition_as_list]
+#     # TODO this will raise an error if a block is empty
+#     block_neighbors = [[len(neighbors(graph, block_i[0], block_j))
+#                         for block_j in partition_as_list]
+#                        for block_i in partition_as_list]
+#     return vertices_per_block, block_neighbors
+
+
 def partition_parameters(graph, partition):
-    # This ensures that every list comprehension iterates over the blocks in
-    # the same order.
-    partition_as_list = list(partition)
-    # pre-condition: each block is regular
-    vertices_per_block = [len(block) for block in partition_as_list]
-    # TODO this will raise an error if a block is empty
-    block_neighbors = [[len(neighbors(graph, block_i[0], block_j))
-                        for block_j in partition_as_list]
-                       for block_i in partition_as_list]
-    return vertices_per_block, block_neighbors
+    """Returns the parameters of the given partition.
+
+    `graph` must be an instance of :data:`Graph`.
+
+    `partition` must be a valid equitable partition of the specified graph.
+
+    The parameters of the graph are two dictionaries. The first dictionary is a
+    mapping from a block of the partition to the number of vertices in that
+    block. The second dictionary is a two-dimensional dictionary. Both keys are
+    blocks of the partition. The entry indexed by blocks **i** and **j** is the
+    number of neighbors in block **j** of any fixed vertex in block **i** (the
+    particular vertex doesn't matter, since the partition is equitable).
+
+    """
+    vertices_per_partition = {block: len(block) for block in partition}
+    block_neighbors = {b_i: {b_j: len(neighbors(graph, peek(b_i), b_j))
+                             for b_j in partition}
+                       for b_i in partition}
+    return vertices_per_partition, block_neighbors
+
+
+def _as_list(sizes):
+    return [v for k, v in sorted(sizes.items(),
+                                 key=lambda item: sorted(item[0]))]
+
+
+def _as_matrix(block_neighbors):
+    return Matrix([[v for b_j, v in sorted(d.items(),
+                                           key=lambda item: sorted(item[0]))]
+                   for b_i, d in sorted(block_neighbors.items(),
+                                        key=lambda item: sorted(item[0]))])
+
+
+def identity_matrix(n):
+    """Returns the identity matrix of size n."""
+    return Matrix([[1 if i == j else 0 for j in range(n)] for i in range(n)])
+
+
+def permutation_matrices(n):
+    """Returns an iterator over all possible permutation matrices of size n.
+
+    """
+    return (Matrix(P) for P in permutations(identity_matrix(n)))
 
 
 def are_common_partitions(graph1, partition1, graph2, partition2):
     # pre-condition: the partitions are valid and equitable
-    #
-    # `sizes` should be a list of length p and `block_neighbors` should be a
-    # list of p lists, each of length p. The innermost entries should be
-    # integers.
     sizes1, block_neighbors1 = partition_parameters(graph1, partition1)
     sizes2, block_neighbors2 = partition_parameters(graph2, partition2)
-    combined1 = zip(sizes1, block_neighbors1)
-    combined2 = zip(sizes2, block_neighbors2)
-    # This is an inefficient algorithm, but it is quite readable.
-    return any(perm == combined2 for perm in permutations(combined1))
+    # Convert `sizes` into a list of length p and `block_neighbors` into a
+    # matrix of size p by p, where p is the number of blocks in the
+    # partitions. The innermost entries of both should be integers.
+    sizes1 = _as_list(sizes1)
+    sizes2 = _as_list(sizes2)
+    neighbors1 = _as_matrix(block_neighbors1)
+    neighbors2 = _as_matrix(block_neighbors2)
+    # Return true if there is any permutation that makes these two pairs equal.
+    match = lambda P: sizes1 == P * sizes2 and neighbors1 == P * neighbors2
+    return any(match(P) for P in permutation_matrices(len(sizes1)))
 
 
 def are_fractionally_isomorphic(G, H):
@@ -235,12 +305,51 @@ def are_fractionally_isomorphic(G, H):
 
 #: A graph consisting of a set of vertices and a set of edges.
 #:
+#: The vertex and edge sets must be instances of :class:`frozenset`.
 #: Each edge must be a :class:`frozenset` containing exactly two elements from
 #: the set of vertices. For example, to create the circle graph on three
 #: vertices::
 #:
-#:     vertices = {1, 2, 3}
-#:     edges = {frozenset(1, 2), frozenset(2, 3), frozenset(3, 1)}
+#:     fs = frozenset
+#:     vertices = fs({1, 2, 3})
+#:     edges = fs({fs({1, 2}), fs({2, 3}), fs({3, 1})})
 #:     G = Graph(vertices, edges)
 #:
 Graph = namedtuple('Graph', ['V', 'E'])
+
+
+def graph_from_file(filename):
+    """Reads an adjacency matrix from a file and returns an instance of
+    :data:`Graph`.
+
+    The adjacency matrix must have entries separated by a space and rows
+    separated by a newline.
+
+    """
+    with open(filename, 'r') as f:
+        adjacency = [[int(b) for b in line.strip().split()]
+                     for line in f.readlines()]
+    # Convert the adjacency matrix to sets of vertices and edges.
+    vertices = frozenset(range(len(adjacency)))
+    # We can use combinations since we're considering only undirected graphs.
+    edges = frozenset({frozenset((u, v)) for u, v in combinations(vertices, 2)
+                       if adjacency[u][v] == 1})
+    return Graph(vertices, edges)
+
+
+class Matrix(object):
+
+    def __init__(self, entries):
+        self.entries = entries
+        self.size = len(entries)
+
+    def __getitem__(self, key):
+        return self.entries[key]
+
+    def __mul__(A, B):
+        n = A.size
+        if isinstance(B, Matrix):
+            return Matrix([[sum(A[i][k] * B[k][j] for k in range(n))
+                            for j in range(n)] for i in range(n)])
+        elif isinstance(B, list):
+            return [sum(A[i][k] * B[k] for k in range(n)) for i in range(n)]
