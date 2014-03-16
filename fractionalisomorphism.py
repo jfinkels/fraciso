@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # Copyright 2014 Jeffrey Finkelstein.
 #
 # This file is part of fractionalisomorphism.
@@ -92,7 +90,7 @@ def neighbors(graph, v, block=None):
     """
     if block is None:
         block = graph.V
-    return {w for w in block if (v, w) in graph.E}
+    return {w for w in block if frozenset((v, w)) in graph.E}
 
 
 def is_block_equitable(graph, partition, block):
@@ -346,10 +344,15 @@ class Matrix(object):
     def __getitem__(self, key):
         return self.entries[key]
 
+    def __eq__(A, B):
+        n = A.size
+        return all(A[i][j] == B[i][j] for i, j in product(range(n), repeat=2))
+
     def __mul__(A, B):
         n = A.size
         if isinstance(B, Matrix):
             return Matrix([[sum(A[i][k] * B[k][j] for k in range(n))
                             for j in range(n)] for i in range(n)])
-        elif isinstance(B, list):
+        if isinstance(B, list):
             return [sum(A[i][k] * B[k] for k in range(n)) for i in range(n)]
+        raise TypeError('must multiply by Matrix or list')
