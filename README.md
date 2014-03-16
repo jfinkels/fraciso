@@ -37,6 +37,19 @@ Basic usage
     else:
         print('No')
 
+Testing
+-------
+
+Running the unit tests requires [nose][0].
+
+    pip install nose
+
+Run the tests as follows.
+
+    nosetests
+
+[n]: https://nose.readthedocs.org/
+
 Contact
 -------
 
