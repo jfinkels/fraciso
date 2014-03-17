@@ -25,16 +25,46 @@ from fraciso.partitions import coarsest_equitable_partition
 from fraciso.partitions import partition_to_permutation
 
 
-def are_fractionally_isomorphic(G, H):
-    """Returns ``True`` if and only if the graphs are fractionally isomorphic.
-
-    Two graphs are **fractionally isomorphic** if they share a common coarsest
-    equitable partition.
+def _fraciso_using_cep(G, H):
+    """Solves the fractional graph isomorphism problem by comparing the
+    coarsest equitable partitions of G and H.
 
     """
     partition1 = coarsest_equitable_partition(G)
     partition2 = coarsest_equitable_partition(H)
     return are_common_partitions(G, partition1, H, partition2)
+
+
+def _fraciso_using_lp(G, H):
+    """Solves the fractional graph isomorhpism problem by solving the
+    corresponding linear program.
+
+    """
+    # AS = SB,  and S 1 = 1, and 1 S = 1, and S >= 0
+    A = to_numpy_matrix(G)
+    B = to_numpy_matrix(H)
+    raise NotImplementedError
+
+
+def are_fractionally_isomorphic(G, H, algorithm='cep'):
+    """Returns ``True`` if and only if the graphs are fractionally isomorphic.
+
+    Two graphs are **fractionally isomorphic** if they share a common coarsest
+    equitable partition.
+
+    `algorithm` can be either ``'cep'`` (the default) or ``'lp'``. The former
+    denotes the coarsest equitable partition algorithm, which finds the
+    coarsest equitable partition in either graph and checks that they are
+    equivalent. The latter denotes the linear programming algorithm, which
+    solves the linear program that defines the fractional graph isomorphism
+    problem.
+
+    """
+    if algorithm == 'cep':
+        return _fraciso_using_cep(G, H)
+    if algorithm == 'lp':
+        return _fraciso_using_lp(G, H)
+    raise ValueError('Unknown algorithm: {}'.format(algorithm))
 
 
 def _enumerate(matrix, extents):
