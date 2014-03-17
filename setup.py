@@ -1,0 +1,42 @@
+# setup.py - installation script for this package
+#
+# Copyright 2014 Jeffrey Finkelstein.
+#
+# This file is part of fractionalisomorphism.
+#
+# fractionalisomorphism is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# fractionalisomorphism is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# fractionalisomorphism.  If not, see <http://www.gnu.org/licenses/>.
+"""Algorithms for fractional graph isomorphism."""
+from setuptools import setup
+
+
+setup(
+    author='Jeffrey Finkelstein',
+    author_email='jeffrey.finkelstein@gmail.com',
+    #classifiers=[],
+    description='Algorithms for fractional graph isomorphism',
+    download_url='https://github.com/jfinkels/fractionalisomorphism',
+    #install_requires=[],
+    include_package_data=True,
+    #keywords=[],
+    license='GNU GPLv3+',
+    long_description=__doc__,
+    name='fractionalisomorphism',
+    platforms='any',
+    packages=['fraciso'],
+    test_suite='nose.collector',
+    tests_require=['nose'],
+    url='https://github.com/jfinkels/fractionalisomorphism',
+    version='0.0.1-dev',
+    zip_safe=False
+)
