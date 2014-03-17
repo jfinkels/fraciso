@@ -277,7 +277,21 @@ def permutation_matrices(n):
 
 
 def are_common_partitions(graph1, partition1, graph2, partition2):
-    # pre-condition: the partitions are valid and equitable
+    """Returns ``True`` if and only if the two partitions have the same
+    parameters (or a permutation of the same parameters).
+
+    `graph1` and `graph2` must be instances of :data:`Graph`.
+
+    `partition1` and `partition2` must be valid equitable partitions of the
+    corresponding graphs.
+
+    The partition parameters are described in the documentation for
+    :func:`partition_parameters`. The parameters include one vector and one
+    matrix. This function returns ``True`` exactly when there is some
+    permutation such that both the vector and the matrix of `partition1` equal
+    the vector and the matrix of `partition2`.
+
+    """
     sizes1, block_neighbors1 = partition_parameters(graph1, partition1)
     sizes2, block_neighbors2 = partition_parameters(graph2, partition2)
     # Convert `sizes` into a list of length p and `block_neighbors` into a
