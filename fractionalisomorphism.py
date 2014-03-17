@@ -252,16 +252,42 @@ def partition_parameters(graph, partition):
     return vertices_per_partition, block_neighbors
 
 
+def lexicographic_blocks(dictionary):
+    """Sorts the key/value pairs of `dictionary` according to the lexicographic
+    order of the keys.
+
+    This is useful if your keys are instances of :class:`set` and you wish them
+    to be ordered according to their list representation instead of ordered
+    according to inclusion.
+
+    """
+    return sorted(dictionary.items(), key=lambda item: sorted(item[0]))
+
+
 def _as_list(sizes):
-    return [v for k, v in sorted(sizes.items(),
-                                 key=lambda item: sorted(item[0]))]
+    """Converts the given dictionary to a list.
+
+    The dictionary `sizes` maps blocks of a partition to number of vertices in
+    that partition. Each element of the returned list is the number of vertices
+    in a block of the partition. The list is sorted according to the
+    lexicographic ordering of the blocks.
+
+    """
+    return [size for block, size in lexicographic_blocks(sizes)]
 
 
 def _as_matrix(block_neighbors):
-    return Matrix([[v for b_j, v in sorted(d.items(),
-                                           key=lambda item: sorted(item[0]))]
-                   for b_i, d in sorted(block_neighbors.items(),
-                                        key=lambda item: sorted(item[0]))])
+    """Converts the given dictionary to a matrix.
+
+    The two-dimensional dictionary `block_neighbors` is indexed in each
+    dimension by blocks of a partition. The entry at row **i**, column **j** is
+    an integer representing the number of neighbors in block **j** of any fixed
+    vertex in block **i**. Each row and each column of the matrix is sorted
+    according to lexicographic order of the blocks.
+
+    """
+    return Matrix([[num for block_j, num in lexicographic_blocks(d)]
+                   for block_i, d in lexicographic_blocks(block_neighbors)])
 
 
 def identity_matrix(n):
