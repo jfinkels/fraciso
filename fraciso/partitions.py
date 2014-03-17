@@ -22,8 +22,8 @@ from itertools import combinations
 from itertools import product
 from itertools import groupby
 
-from fraciso.graphs import neighbors
-from fraciso.matrices import Matrix
+import numpy as np
+
 from fraciso.matrices import permutation_matrices
 
 
@@ -57,8 +57,23 @@ def is_valid_partition(graph, partition):
     disjoint union of the blocks in the partition.
 
     """
-    return are_pairwise_disjoint(*partition) and union(*partition) == graph.V \
-        and all(len(block) > 0 for block in partition)
+    return (are_pairwise_disjoint(*partition)
+            and union(*partition) == set(graph.nodes())
+            and all(len(block) > 0 for block in partition))
+
+
+def degree(graph, v, block=None):
+    """Returns the number of neighbors of vertex `v` in the specified graph.
+
+    If `block` is a set of vertices in the given graph, this function returns
+    only the number of neighbors in the specified block. Otherwise, it simply
+    returns the degree of `v` in `graph`.
+
+    """
+    if block is None:
+        block = set(graph)
+    subgraph = graph.subgraph(block | {v})
+    return subgraph.degree(v)
 
 
 def is_block_equitable(graph, partition, block):
@@ -78,7 +93,7 @@ def is_block_equitable(graph, partition, block):
     block B, for all blocks B.
 
     """
-    return all(len(neighbors(graph, v, B)) == len(neighbors(graph, w, B))
+    return all(degree(graph, v, B) == degree(graph, w, B)
                for v, w in product(block, block) for B in partition)
 
 
@@ -111,9 +126,9 @@ def _adapt(graph, partition):
     """
     # First, for each vertex, compute the number of neighbors of that vertex in
     # each block (including its own).
-    block_neighbors = {v: {block: len(neighbors(graph, v, block))
+    block_neighbors = {v: {block: degree(graph, v, block)
                            for block in partition}
-                       for v in graph.V}
+                       for v in graph}
     # Second, partition all vertices into new blocks consisting of vertices
     # that have the same dictionary of block neighbors as computed above.
     #
@@ -167,7 +182,7 @@ def coarsest_equitable_partition(graph):
     # entire vertex set. Recursively adapt the partition until no further
     # adaptations are possible. This is guaranteed to be the coarsest equitable
     # partition.
-    return _adapt(graph, {graph.V})
+    return _adapt(graph, {frozenset(graph)})
 
 
 def partition_parameters(graph, partition):
@@ -186,7 +201,7 @@ def partition_parameters(graph, partition):
 
     """
     vertices_per_partition = {block: len(block) for block in partition}
-    block_neighbors = {b_i: {b_j: len(neighbors(graph, peek(b_i), b_j))
+    block_neighbors = {b_i: {b_j: degree(graph, peek(b_i), b_j)
                              for b_j in partition}
                        for b_i in partition}
     return vertices_per_partition, block_neighbors
@@ -203,7 +218,7 @@ def partition_to_permutation(graph, partition):
     `partition` must be a valid partition of `graph`.
 
     """
-    n = len(graph.V)
+    n = len(graph)
     # Sort the blocks of the partition according to lexicographic order, and
     # sort the set of blocks as well so that the output is well-defined.
     sorted_partition = sorted(sorted(block) for block in partition)
@@ -212,8 +227,9 @@ def partition_to_permutation(graph, partition):
     # representing a permutation.
     permutation = chain(*sorted_partition)
     # Create the permutation matrix from the permutation.
-    matrix = [[1 if j == v else 0 for j in range(n)] for v in permutation]
-    return Matrix(matrix), extents
+    matrix = np.matrix([[1 if j == v else 0 for j in range(n)]
+                        for v in permutation])
+    return matrix, extents
 
 
 def lexicographic_blocks(dictionary):
@@ -228,8 +244,8 @@ def lexicographic_blocks(dictionary):
     return sorted(dictionary.items(), key=lambda item: sorted(item[0]))
 
 
-def _as_list(sizes):
-    """Converts the given dictionary to a list.
+def _as_vector(sizes):
+    """Converts the given dictionary to a vector.
 
     The dictionary `sizes` maps blocks of a partition to number of vertices in
     that partition. Each element of the returned list is the number of vertices
@@ -237,7 +253,7 @@ def _as_list(sizes):
     lexicographic ordering of the blocks.
 
     """
-    return [size for block, size in lexicographic_blocks(sizes)]
+    return np.mat([size for block, size in lexicographic_blocks(sizes)]).T
 
 
 def _as_matrix(block_neighbors):
@@ -250,7 +266,7 @@ def _as_matrix(block_neighbors):
     according to lexicographic order of the blocks.
 
     """
-    return Matrix([[num for block_j, num in lexicographic_blocks(d)]
+    return np.mat([[num for block_j, num in lexicographic_blocks(d)]
                    for block_i, d in lexicographic_blocks(block_neighbors)])
 
 
@@ -275,10 +291,11 @@ def are_common_partitions(graph1, partition1, graph2, partition2):
     # Convert `sizes` into a list of length p and `block_neighbors` into a
     # matrix of size p by p, where p is the number of blocks in the
     # partitions. The innermost entries of both should be integers.
-    sizes1 = _as_list(sizes1)
-    sizes2 = _as_list(sizes2)
+    sizes1 = _as_vector(sizes1)
+    sizes2 = _as_vector(sizes2)
     neighbors1 = _as_matrix(block_neighbors1)
     neighbors2 = _as_matrix(block_neighbors2)
     # Return true if there is any permutation that makes these two pairs equal.
-    match = lambda P: sizes1 == P * sizes2 and neighbors1 == P * neighbors2
+    match = lambda P: (np.array_equal(sizes1, P * sizes2)
+                       and np.array_equal(neighbors1, P * neighbors2))
     return any(match(P) for P in permutation_matrices(len(sizes1)))

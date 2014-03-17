@@ -19,22 +19,21 @@
 """Unit tests for the :mod:`fraciso.isomorphism` module."""
 from fraciso.isomorphism import are_fractionally_isomorphic
 from fraciso.isomorphism import fractionally_isomorphic_graphs
-from fraciso.graphs import graph_from_file
 
-from tests.helpers import path_to
+from tests.helpers import graph_from_file
 
 
 def test_are_fractionally_isomorphic():
-    G = graph_from_file(path_to('data/test_graph1.txt'))
-    H = graph_from_file(path_to('data/test_graph2.txt'))
+    G = graph_from_file('data/test_graph1.txt')
+    H = graph_from_file('data/test_graph2.txt')
     assert are_fractionally_isomorphic(G, G)
     assert are_fractionally_isomorphic(G, H)
     assert are_fractionally_isomorphic(H, H)
 
 
 def test_fractionally_isomorphic_graphs():
-    G = graph_from_file(path_to('data/test_graph1.txt'))
-    H = graph_from_file(path_to('data/test_graph2.txt'))
+    G = graph_from_file('data/test_graph1.txt')
+    H = graph_from_file('data/test_graph2.txt')
     isomorphic_graphs = list(fractionally_isomorphic_graphs(G))
     for graph in isomorphic_graphs:
         print(graph)

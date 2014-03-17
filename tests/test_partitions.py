@@ -17,14 +17,13 @@
 # You should have received a copy of the GNU General Public License along with
 # fractionalisomorphism.  If not, see <http://www.gnu.org/licenses/>.
 """Unit tests for the :mod:`fraciso.partitions` module."""
-from fraciso.graphs import graph_from_file
 from fraciso.partitions import coarsest_equitable_partition
 
-from tests.helpers import path_to
+from tests.helpers import graph_from_file
 
 
 def test_coarsest_equitable_partition():
-    G = graph_from_file(path_to('data/test_graph1.txt'))
+    G = graph_from_file('data/test_graph1.txt')
     partition = coarsest_equitable_partition(G)
     block1 = frozenset(range(6))
     block2 = frozenset(range(6, 12))

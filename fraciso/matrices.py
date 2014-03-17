@@ -16,37 +16,17 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # fractionalisomorphism.  If not, see <http://www.gnu.org/licenses/>.
-from itertools import combinations
 from itertools import permutations
 from itertools import product
 
-
-def identity_matrix(n):
-    """Returns the identity matrix of size n."""
-    return Matrix([[1 if i == j else 0 for j in range(n)] for i in range(n)])
+import numpy as np
 
 
 def permutation_matrices(n):
-    """Returns an iterator over all possible permutation matrices of size n.
+    """Returns an iterator over all possible permutation matrices of size `n`.
 
     """
-    return (Matrix(P) for P in permutations(identity_matrix(n)))
-
-
-def _append_matrices(matrix1, matrix2):
-    """Combines the two matrices by adjoining their rows.
-
-    `matrix1` must be an **m** by **n** two-dimensional list, and `matrix2`
-    must be an **m** by **p** two-dimensional list. The returned matrix has
-    size **m** by **n + p**.
-
-    """
-    return [row1 + row2 for row1, row2 in zip(matrix1, matrix2)]
-
-
-def submatrix(matrix, m1, n1, m2, n2):
-    """Returns the submatrix starting at (m1, n1) and ending at (m2, n2)."""
-    return [row[n1:n2] for row in matrix[m1:m2]]
+    return (np.mat(P) for P in permutations(np.identity(n)))
 
 
 def _sequences_of_ones(n, k):
@@ -78,38 +58,4 @@ def _row_sum(matrix, m1, n1, m2, n2):
     `m2` must be greater than `m1` and `n2` must be greater than `n1`.
 
     """
-    return sum(submatrix(matrix, m1, n1, m2, n2)[0])
-
-
-class Matrix(object):
-    """A square matrix.
-
-    `entries` must be a square two-dimensional list.
-
-    """
-
-    def __init__(self, entries):
-        self.entries = entries
-        self.size = len(entries)
-
-    def __getitem__(self, key):
-        return self.entries[key]
-
-    def __eq__(A, B):
-        n = A.size
-        return all(A[i][j] == B[i][j] for i, j in product(range(n), repeat=2))
-
-    def __len__(self):
-        return len(self.entries)
-
-    def __mul__(A, B):
-        n = A.size
-        if isinstance(B, Matrix):
-            return Matrix([[sum(A[i][k] * B[k][j] for k in range(n))
-                            for j in range(n)] for i in range(n)])
-        if isinstance(B, list):
-            return [sum(A[i][k] * B[k] for k in range(n)) for i in range(n)]
-        raise TypeError('must multiply by Matrix or list')
-
-    def __str__(self):
-        return '\n'.join(str(row) for row in self.entries)
+    return sum(matrix[m1:m2, n1:n2][0])

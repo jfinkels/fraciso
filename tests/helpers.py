@@ -19,6 +19,9 @@
 """Helper functions for unit tests."""
 import os.path
 
+from networkx.convert import from_numpy_matrix
+from numpy import loadtxt
+
 #: The absolute path to the directory containing this file.
 DIRPATH = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -29,3 +32,14 @@ def path_to(filename):
 
     """
     return os.path.join(DIRPATH, filename)
+
+
+def graph_from_file(filename):
+    """Reads an adjacency matrix from a file and returns an instance of
+    :data:`Graph`.
+
+    The adjacency matrix must have entries separated by a space and rows
+    separated by a newline.
+
+    """
+    return from_numpy_matrix(loadtxt(path_to(filename)))

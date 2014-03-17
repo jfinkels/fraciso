@@ -17,11 +17,12 @@
 # You should have received a copy of the GNU General Public License along with
 # fractionalisomorphism.  If not, see <http://www.gnu.org/licenses/>.
 """Algorithms for determining if two graphs are fractionally isomorphic."""
+from networkx.convert import from_numpy_matrix
+from networkx.convert import to_numpy_matrix
+
 from fraciso.partitions import are_common_partitions
 from fraciso.partitions import coarsest_equitable_partition
 from fraciso.partitions import partition_to_permutation
-from fraciso.graphs import graph_to_matrix
-from fraciso.graphs import matrix_to_graph
 
 
 def are_fractionally_isomorphic(G, H):
@@ -82,9 +83,9 @@ def fractionally_isomorphic_graphs(graph):
     partition = coarsest_equitable_partition(graph)
     permutation, extents = partition_to_permutation(graph, partition)
     # TODO this would be simpler if we used an adjacency matrix representation
-    block_matrix = permutation * graph_to_matrix(graph)
+    block_matrix = permutation * to_numpy_matrix(graph)
     # At this point, we have the block matrix and the "extents" (the indices
     # giving the bounds of the blocks of the matrix). Now we enumerate each
     # possible submatrix with the same row sum.
     raise NotImplementedError
-    return (matrix_to_graph(M) for M in _enumerate(block_matrix, extents))
+    return (from_numpy_matrix(M) for M in _enumerate(block_matrix, extents))

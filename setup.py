@@ -19,6 +19,9 @@
 """Algorithms for fractional graph isomorphism."""
 from setuptools import setup
 
+#: Installation requirements.
+requirements = ['networkx', 'numpy']
+
 
 setup(
     author='Jeffrey Finkelstein',
@@ -26,7 +29,7 @@ setup(
     #classifiers=[],
     description='Algorithms for fractional graph isomorphism',
     download_url='https://github.com/jfinkels/fractionalisomorphism',
-    #install_requires=[],
+    install_requires=requirements,
     include_package_data=True,
     #keywords=[],
     license='GNU GPLv3+',
