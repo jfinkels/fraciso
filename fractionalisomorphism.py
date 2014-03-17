@@ -38,6 +38,8 @@ Example usage::
 """
 from collections import namedtuple
 from functools import reduce
+from itertools import accumulate
+from itertools import chain
 from itertools import combinations
 from itertools import groupby
 from itertools import permutations
@@ -202,34 +204,6 @@ def coarsest_equitable_partition(graph):
     return _adapt(graph, {graph.V})
 
 
-# def partition_parameters(graph, partition):
-#     """Returns the parameters of the given partition.
-
-#     `graph` must be an instance of :data:`Graph`.
-
-#     `partition` must be a valid equitable partition of the specified graph.
-
-#     The parameters of the graph are a list of size **p** and a matrix (a list
-#     of lists) of size **p** by **p**, where **p** is the number of blocks in
-#     the partition. The entry at index **i** in the list is the number of
-#     vertices in the **i**th block of the partition. The entry at row **i**,
-#     column **j** of the matrix is the number of neighbors in block **j** of
-#     any fixed vertex in block **i** (since the partition is equitable, it
-#     doesn't matter which particular vertex we consider).
-
-#     """
-#     # This ensures that every list comprehension iterates over the blocks in
-#     # the same order.
-#     partition_as_list = list(partition)
-#     # pre-condition: each block is regular
-#     vertices_per_block = [len(block) for block in partition_as_list]
-#     # TODO this will raise an error if a block is empty
-#     block_neighbors = [[len(neighbors(graph, block_i[0], block_j))
-#                         for block_j in partition_as_list]
-#                        for block_i in partition_as_list]
-#     return vertices_per_block, block_neighbors
-
-
 def partition_parameters(graph, partition):
     """Returns the parameters of the given partition.
 
@@ -335,10 +309,159 @@ def are_common_partitions(graph1, partition1, graph2, partition2):
 def are_fractionally_isomorphic(G, H):
     """Returns ``True`` if and only if the graphs are fractionally isomorphic.
 
+    Two graphs are **fractionally isomorphic** if they share a common coarsest
+    equitable partition.
+
     """
     partition1 = coarsest_equitable_partition(G)
     partition2 = coarsest_equitable_partition(H)
     return are_common_partitions(G, partition1, H, partition2)
+
+
+def graph_to_matrix(graph):
+    """Returns the adjacency matrix of the specified graph, as an instance of
+    :class:`Matrix`.
+
+    """
+    n = len(graph.V)
+    return Matrix([[1 if frozenset((i, j)) in graph.E else 0 for j in range(n)]
+                   for i in range(n)])
+
+
+def matrix_to_graph(matrix):
+    """Converts the given adjacency matrix to an instance of :data:`Graph`."""
+    n = len(matrix)
+    vertices = frozenset(range(n))
+    # We can use combinations since we're considering only undirected graphs.
+    edges = frozenset({frozenset((u, v)) for u, v in combinations(vertices, 2)
+                       if matrix[u][v] == 1})
+    return Graph(vertices, edges)
+
+
+def partition_to_permutation(graph, partition):
+    """Converts the specified partition of the graph to a permutation matrix,
+    representing the permutation of the adjacency matrix of the graph that
+    places rows into contiguous blocks representing blocks of the partition.
+
+    `graph` must be an instance of :data:`Graph`. Furthermore, the **n**
+    vertices of the graph must be the first **n** nonnegative integers.
+
+    `partition` must be a valid partition of `graph`.
+
+    """
+    n = len(graph.V)
+    # Sort the blocks of the partition according to lexicographic order, and
+    # sort the set of blocks as well so that the output is well-defined.
+    sorted_partition = sorted(sorted(block) for block in partition)
+    extents = list(accumulate(len(block) for block in sorted_partition))
+    # Flatten the partition so that we have simply a sequence of vertices
+    # representing a permutation.
+    permutation = chain(*sorted_partition)
+    # Create the permutation matrix from the permutation.
+    matrix = [[1 if j == v else 0 for j in range(n)] for v in permutation]
+    return Matrix(matrix), extents
+
+
+def _append_matrices(matrix1, matrix2):
+    """Combines the two matrices by adjoining their rows.
+
+    `matrix1` must be an **m** by **n** two-dimensional list, and `matrix2`
+    must be an **m** by **p** two-dimensional list. The returned matrix has
+    size **m** by **n + p**.
+
+    """
+    return [row1 + row2 for row1, row2 in zip(matrix1, matrix2)]
+
+
+def _sequences_of_ones(n, k):
+    """Returns a list of all binary sequences of length `n` with `k` ones."""
+    if n <= 0:
+        return [[]]
+    if k <= 0:
+        return [[0 for x in range(n)]]
+    if k >= n:
+        return [[1 for x in range(n)]]
+    return [[0] + seq for seq in _sequences_of_ones(n - 1, k)] \
+        + [[1] + seq for seq in _sequences_of_ones(n - 1, k - 1)]
+
+
+def _matrices_with_row_sums(m, n, d):
+    """Returns an iterator over all m by n matrices whose rows all sum to d.
+
+    This function is dangerous! It creates a combinatorial explosion of
+    matrices, so don't try to store all of the matrices in memory at once!
+
+    """
+    return product(_sequences_of_ones(n, d), repeat=m)
+
+
+def submatrix(matrix, m1, n1, m2, n2):
+    """Returns the submatrix starting at (m1, n1) and ending at (m2, n2)."""
+    return [row[n1:n2] for row in matrix[m1:m2]]
+
+
+def _row_sum(matrix, m1, n1, m2, n2):
+    """Computes the sum of the first row of the submatrix starting at (m1, n1)
+    and ending at (m2, n2).
+
+    `m2` must be greater than `m1` and `n2` must be greater than `n1`.
+
+    """
+    return sum(submatrix(matrix, m1, n1, m2, n2)[0])
+
+
+def _enumerate(matrix, extents):
+    # TODO could also use partition_parameters() to get row_sums
+    #extents = [0] + extents
+    #pairs = list(zip(extents, extents[1:]))
+    pass
+    #### Other attempts below
+    # # For the sake of brevity, rename this function.
+    # #
+    # # This produces an iterator over all matrices in the same shape as the
+    # # block of `matrix` starting at (m1, n1) and ending at (m2, n2), and with
+    # # the same row sum as each row in that submatrix.
+    # mx = lambda m1, n1, m2, n2: \
+    #     _matrices_with_row_sums(m2 - m1, n2 - n1,
+    #                             _row_sum(matrix, m1, n1, m2, n2))
+    #######
+    # # Mapping from submatrix boundaries to iterator over all possible
+    # # submatrices with the same row sums.
+    # b = {(m1, m2): {(n1, n2): mx(m1, n1, m2, n2) for n1, n2 in pairs}
+    #      for m1, m2 in pairs}
+    # # Mapping from submatrix row boundaries to list of all possible rows.
+    # rows = {(m1, m2): [reduce(_append_matrices, row)
+    #                    for row in product(*
+    #                      lexicographic_blocks(b[(m1, m2)]))]
+    #         for m1, m2 in pairs}
+    # # Iterator over all full matrices.
+    # full = [sum(r) for r in product(*lexicographic_blocks(rows))]
+    # return [Matrix(m) for m in full]
+    ######
+    # # THIS IS TOOO COMPLICATED
+    # return (sum(rows)
+    #         for rows in product(*((
+    #                 reduce(_append_matrices, row_of_blocks)
+    #                 for row_of_blocks in product(*(
+    #                         mx(m1, n1, m2, n2)
+    #                         for n1, n2 in pairs)))
+    #                               for m1, m2 in pairs)))
+
+
+def fractionally_isomorphic_graphs(graph):
+    """Returns an iterator over all graphs that are fractionally isomorphic to
+    the specified graph, including the graph itself.
+
+    """
+    partition = coarsest_equitable_partition(graph)
+    permutation, extents = partition_to_permutation(graph, partition)
+    # TODO this would be simpler if we used an adjacency matrix representation
+    block_matrix = permutation * graph_to_matrix(graph)
+    # At this point, we have the block matrix and the "extents" (the indices
+    # giving the bounds of the blocks of the matrix). Now we enumerate each
+    # possible submatrix with the same row sum.
+    raise NotImplementedError
+    return (matrix_to_graph(M) for M in _enumerate(block_matrix, extents))
 
 
 #: A graph consisting of a set of vertices and a set of edges.
@@ -367,15 +490,15 @@ def graph_from_file(filename):
     with open(filename, 'r') as f:
         adjacency = [[int(b) for b in line.strip().split()]
                      for line in f.readlines()]
-    # Convert the adjacency matrix to sets of vertices and edges.
-    vertices = frozenset(range(len(adjacency)))
-    # We can use combinations since we're considering only undirected graphs.
-    edges = frozenset({frozenset((u, v)) for u, v in combinations(vertices, 2)
-                       if adjacency[u][v] == 1})
-    return Graph(vertices, edges)
+    return matrix_to_graph(adjacency)
 
 
 class Matrix(object):
+    """A square matrix.
+
+    `entries` must be a square two-dimensional list.
+
+    """
 
     def __init__(self, entries):
         self.entries = entries
@@ -388,6 +511,9 @@ class Matrix(object):
         n = A.size
         return all(A[i][j] == B[i][j] for i, j in product(range(n), repeat=2))
 
+    def __len__(self):
+        return len(self.entries)
+
     def __mul__(A, B):
         n = A.size
         if isinstance(B, Matrix):
@@ -396,3 +522,6 @@ class Matrix(object):
         if isinstance(B, list):
             return [sum(A[i][k] * B[k] for k in range(n)) for i in range(n)]
         raise TypeError('must multiply by Matrix or list')
+
+    def __str__(self):
+        return '\n'.join(str(row) for row in self.entries)

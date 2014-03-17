@@ -23,8 +23,11 @@ These tests should be run with ``nose``, by executing the following command::
 """
 from fractionalisomorphism import are_fractionally_isomorphic
 from fractionalisomorphism import coarsest_equitable_partition
-from fractionalisomorphism import neighbors
+from fractionalisomorphism import fractionally_isomorphic_graphs
 from fractionalisomorphism import graph_from_file
+from fractionalisomorphism import _matrices_with_row_sums
+from fractionalisomorphism import neighbors
+from fractionalisomorphism import _sequences_of_ones
 
 
 def test_neighbors():
@@ -48,3 +51,32 @@ def test_are_fractionally_isomorphic():
     assert are_fractionally_isomorphic(G, G)
     assert are_fractionally_isomorphic(G, H)
     assert are_fractionally_isomorphic(H, H)
+
+
+def test_sequences_of_ones():
+    expected = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
+    actual = _sequences_of_ones(3, 2)
+    assert len(expected) == len(actual)
+    for x in expected:
+        assert x in actual
+    expected = [[0, 0, 1, 1], [0, 1, 0, 1], [0, 1, 1, 0],
+                [1, 0, 0, 1], [1, 0, 1, 0], [1, 1, 0, 0]]
+    actual = _sequences_of_ones(4, 2)
+    assert len(expected) == len(actual)
+    for x in expected:
+        assert x in actual, x
+
+
+def test_matrices_with_row_sums():
+    matrices = list(_matrices_with_row_sums(2, 3, 2))
+    assert len(matrices) == 9
+
+
+def test_fractionally_isomorphic_graphs():
+    G = graph_from_file('test_graph1.txt')
+    H = graph_from_file('test_graph2.txt')
+    isomorphic_graphs = list(fractionally_isomorphic_graphs(G))
+    for graph in isomorphic_graphs:
+        print(graph)
+    assert G in isomorphic_graphs
+    assert H in isomorphic_graphs
