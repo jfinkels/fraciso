@@ -51,6 +51,34 @@ def skip(reason=None):
     return skipped
 
 
+def skip_unless(condition, reason=None):
+    """Decorator that skips the decorated test function unless `condition` is
+    ``True``.
+
+    This is a replacement for :func:`unittest.skipUnless` that works with
+    ``nose``. The argument ``reason`` is a string describing why the test was
+    skipped.
+
+    """
+    def skipped(test):
+        # If no reason is given, don't display one in the message.
+        if reason:
+            message = 'Skipped {0}: {1}'.format(test.__name__, reason)
+        else:
+            message = 'Skipped {0}'.format(test.__name__)
+
+        # TODO Since we don't check the case in which `test` is a class, the
+        # result of running the tests will be a single skipped test, although
+        # it should show one skip for each test method within the class.
+        def inner(*args, **kw):
+            if not condition:
+                raise SkipTest(message)
+            return test(*args, **kw)
+        inner.__name__ = test.__name__
+        return inner
+    return skipped
+
+
 def path_to(filename):
     """Returns a path to the specified file, given as a path relative to the
     directory containing **this** file.

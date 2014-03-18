@@ -15,6 +15,12 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # fraciso.  If not, see <http://www.gnu.org/licenses/>.
+"""Functions for computing and modifying partitions of a graph.
+
+A **partition** of a graph is a collection of sets of vertices that are
+pairwise disjoint and whose union equals the set of all vertices in the graph.
+
+"""
 from itertools import accumulate
 from itertools import chain
 from itertools import combinations

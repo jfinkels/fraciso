@@ -1,3 +1,6 @@
+ecos
+cvxopt
+pulp
 networkx
 numpy
 scipy

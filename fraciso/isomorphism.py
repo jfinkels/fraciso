@@ -27,54 +27,90 @@ from networkx.generators.random_graphs import random_regular_graph
 import numpy as np
 from scipy.linalg import block_diag
 
+from fraciso.linprog import cvxopt_available
+from fraciso.linprog import ecos_available
+from fraciso.linprog import fraciso_using_lp
+from fraciso.linprog import LP_METHODS
+from fraciso.linprog import pulp_available
+from fraciso.matrices import dictionary_to_permutation
+from fraciso.matrices import is_doubly_stochastic
 from fraciso.matrices import random_permutation_matrix
 from fraciso.matrices import permutation_to_matrix
+from fraciso.matrices import to_row_echelon
 from fraciso.partitions import are_common_partitions
 from fraciso.partitions import coarsest_equitable_partition
 from fraciso.partitions import partition_parameters
 
 
-def _fraciso_using_cep(G, H):
+def _cep_solver(G, H):
     """Solves the fractional graph isomorphism problem by comparing the
     coarsest equitable partitions of G and H.
+
+    Returns a two-tuple whose left element is a Boolean representing whether
+    the two graphs have a common coarsest partition and whose right element is
+    the pair of partitions of the given graphs (in the same order as the inputs
+    are given). If the left element is ``False``, the right element is
+    ``None``, since there is no witness that the graphs are fractionally
+    isomorphic.
 
     """
     partition1 = coarsest_equitable_partition(G)
     partition2 = coarsest_equitable_partition(H)
-    return are_common_partitions(G, partition1, H, partition2)
-
-
-def _fraciso_using_lp(G, H):
-    """Solves the fractional graph isomorhpism problem by solving the
-    corresponding linear program.
-
-    """
-    # AS = SB,  and S 1 = 1, and 1 S = 1, and S >= 0
-    A = to_numpy_matrix(G)
-    B = to_numpy_matrix(H)
-    raise NotImplementedError
+    result = are_common_partitions(G, partition1, H, partition2)
+    witness = (partition1, partition2) if result else None
+    return result, witness
 
 
 def are_fractionally_isomorphic(G, H, algorithm='cep'):
-    """Returns ``True`` if and only if the graphs are fractionally isomorphic.
+    """Solves the fractional graph isomorphism problem and provides a witness,
+    if any, that the two graphs are fractionally isomorphism.
 
     Two graphs are **fractionally isomorphic** if they share a common coarsest
-    equitable partition.
+    equitable partition. Equivalently, graphs with adjacency matrices A and B
+    are fractionally isomorphic if there is a doubly stochastic matrix such
+    that AS = SB.
 
     `G` and `H` must be instances of :class:`networkx.Graph`.
 
-    `algorithm` can be either ``'cep'`` (the default) or ``'lp'``. The former
-    denotes the coarsest equitable partition algorithm, which finds the
-    coarsest equitable partition in either graph and checks that they are
-    equivalent. The latter denotes the linear programming algorithm, which
-    solves the linear program that defines the fractional graph isomorphism
-    problem.
+    `algorithm` can be either ``'cep'`` (the default) or ``'lp.LPSOLVER'``,
+    where ``LPSOLVER`` is one of the recognized linear programming solvers
+    (``ecos``, ``cvxopt``, etc.). The former denotes the coarsest equitable
+    partition algorithm, which finds the coarsest equitable partition in either
+    graph and checks that they are equivalent. The latter denotes one of the
+    linear programming algorithms, which solves the linear programming
+    formulation of the fractional graph isomorphism problem as specified above.
+
+    The available linear programming solvers can be found in
+    :data:`fraciso.linprog.LP_METHODS`.
+
+    This function returns a two-tuple. The left element is a Boolean
+    representing whether the two graphs are fractionally isomorphic. The right
+    element is a witness that the two graphs are fractionally isomorphic, or
+    ``None`` if no such witness exists. The witness depends on the algorithm
+
+    If a specified linear programming library is known but unavailable, this
+    function raises a :exc:`RuntimeError`. If an unknown algorithm is
+    specified, this function raises a :exc:`ValueError`.
 
     """
     if algorithm == 'cep':
-        return _fraciso_using_cep(G, H)
-    if algorithm == 'lp':
-        return _fraciso_using_lp(G, H)
+        return _cep_solver(G, H)
+    if algorithm.startswith('lp'):
+        try:
+            method = algorithm.split('.')[1]
+        except:
+            raise ValueError('Must provide algorithm like "lp.ecos" or'
+                             ' "lp.cvxopt"; got "{}"'.format(algorithm))
+        if method not in LP_METHODS:
+            raise ValueError('Unknown linear programming method'
+                             ' {}'.format(method))
+        if method == 'ecos' and not ecos_available:
+            raise RuntimeError('ecos unavailable; try "pip install ecos"')
+        if method == 'cvxopt' and not cvxopt_available:
+            raise RuntimeError('cvxopt unavailable; try "pip install cvxopt"')
+        if method == 'pulp' and not pulp_available:
+            raise RuntimeError('pulp unavailable; try "pip install pulp"')
+        return fraciso_using_lp(G, H, method)
     raise ValueError('Unknown algorithm: {}'.format(algorithm))
 
 
@@ -260,3 +296,21 @@ def fractionally_isomorphic_graphs(graph):
 
     """
     raise NotImplementedError
+
+
+def verify_isomorphism(G, H, S):
+    """Returns ``True`` if and only if the doubly stochastic matrix `S` is a
+    correct witness that `G` and `H` are fractionally isomorphic.
+
+    `G` and `H` are instances of :class:`networkx.Graph`. `S` is a Numpy
+    matrix.
+
+    If **A** and **B** are the adjacency matrices of `G` and `H`, respectively,
+    then this function checks that **AS = SB**, and that `S` is nonnegative and
+    doubly stochastic.
+
+    """
+    A = to_numpy_matrix(G)
+    B = to_numpy_matrix(H)
+    return (np.all(S >= 0) and is_doubly_stochastic(S)
+            and np.array_equal(A * S, S * B))
