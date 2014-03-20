@@ -51,6 +51,8 @@ def are_fractionally_isomorphic(G, H, algorithm='cep'):
     Two graphs are **fractionally isomorphic** if they share a common coarsest
     equitable partition.
 
+    `G` and `H` must be instances of :class:`networkx.Graph`.
+
     `algorithm` can be either ``'cep'`` (the default) or ``'lp'``. The former
     denotes the coarsest equitable partition algorithm, which finds the
     coarsest equitable partition in either graph and checks that they are
@@ -107,6 +109,8 @@ def _enumerate(matrix, extents):
 def fractionally_isomorphic_graphs(graph):
     """Returns an iterator over all graphs that are fractionally isomorphic to
     the specified graph, including the graph itself.
+
+    `graph` must be an instance of :class:`networkx.Graph`.
 
     """
     partition = coarsest_equitable_partition(graph)

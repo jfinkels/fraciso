@@ -52,6 +52,10 @@ def is_valid_partition(graph, partition):
     """Returns ``True`` if and only if the specified partition is a valid
     partition of the vertices of `graph`.
 
+    `graph` is an instance of :class:`networkx.Graph`.
+
+    `partition` is a set of sets of vertices from the graph.
+
     A partition is valid if the set of vertices of the graph equals the
     disjoint union of the blocks in the partition.
 
@@ -63,6 +67,8 @@ def is_valid_partition(graph, partition):
 
 def degree(graph, v, block=None):
     """Returns the number of neighbors of vertex `v` in the specified graph.
+
+    `graph` is an instance of :class:`networkx.Graph`.
 
     If `block` is a set of vertices in the given graph, this function returns
     only the number of neighbors in the specified block. Otherwise, it simply
@@ -79,7 +85,7 @@ def is_block_equitable(graph, partition, block):
     """Returns ``True`` if and only if the specified block of the given
     partition is equitable.
 
-    `graph` must be an instance of :data:`Graph`.
+    `graph` must be an instance of :class:`networkx.Graph`.
 
     `partition` is a set of sets. Each inner set, a **block**, is a set of
     vertices in the graph.
@@ -100,7 +106,7 @@ def is_partition_equitable(graph, partition):
     """Returns ``True`` if and only if the specified partition is an equitable
     partition of the graph.
 
-    `graph` must be an instance of :data:`Graph`.
+    `graph` must be an instance of :class:`networkx.Graph`.
 
     `partition` is a set of sets. Each inner set, a **block**, is a set of
     vertices in the graph.
@@ -117,7 +123,7 @@ def is_partition_equitable(graph, partition):
 def _adapt(graph, partition):
     """Adapt the specified equitable partition into the coarsest equitable one.
 
-    `graph` must be an instance of :data:`Graph`.
+    `graph` must be an instance of :class:`networkx.Graph`.
 
     `partition` is a set of blocks, each of which is a :class:`frozenset` of
     vertices from the graph.
@@ -163,7 +169,7 @@ def _adapt(graph, partition):
 def coarsest_equitable_partition(graph):
     """Returns the coarsest equitable partition of the specified graph.
 
-    `graph` must be an instance of :data:`Graph`.
+    `graph` must be an instance of :class:`networkx.Graph`.
 
     A partition is a set of sets. Each of the inner sets is a
     :class:`frozenset` of vertices in the graph.
@@ -187,7 +193,7 @@ def coarsest_equitable_partition(graph):
 def partition_parameters(graph, partition):
     """Returns the parameters of the given partition.
 
-    `graph` must be an instance of :data:`Graph`.
+    `graph` must be an instance of :class:`networkx.Graph`.
 
     `partition` must be a valid equitable partition of the specified graph.
 
@@ -211,8 +217,8 @@ def partition_to_permutation(graph, partition):
     representing the permutation of the adjacency matrix of the graph that
     places rows into contiguous blocks representing blocks of the partition.
 
-    `graph` must be an instance of :data:`Graph`. Furthermore, the **n**
-    vertices of the graph must be the first **n** nonnegative integers.
+    `graph` must be an instance of :class:`networkx.Graph`. Furthermore, the
+    **n** vertices of the graph must be the first **n** nonnegative integers.
 
     `partition` must be a valid partition of `graph`.
 
@@ -273,7 +279,7 @@ def are_common_partitions(graph1, partition1, graph2, partition2):
     """Returns ``True`` if and only if the two partitions have the same
     parameters (or a permutation of the same parameters).
 
-    `graph1` and `graph2` must be instances of :data:`Graph`.
+    `graph1` and `graph2` must be instances of :class:`networkx.Graph`.
 
     `partition1` and `partition2` must be valid equitable partitions of the
     corresponding graphs.
