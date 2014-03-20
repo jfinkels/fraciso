@@ -18,7 +18,7 @@
 """Unit tests for the :mod:`fraciso.partitions` module."""
 from fraciso.partitions import coarsest_equitable_partition
 
-from tests.helpers import graph_from_file
+from .helpers import graph_from_file
 
 
 def test_coarsest_equitable_partition():

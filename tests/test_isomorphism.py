@@ -21,7 +21,7 @@
 from fraciso.isomorphism import are_fractionally_isomorphic
 from fraciso.isomorphism import fractionally_isomorphic_graphs
 
-from tests.helpers import graph_from_file
+from .helpers import graph_from_file
 
 
 def test_are_fractionally_isomorphic():
