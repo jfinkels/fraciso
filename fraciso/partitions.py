@@ -190,7 +190,7 @@ def coarsest_equitable_partition(graph):
     return _adapt(graph, {frozenset(graph)})
 
 
-def partition_parameters(graph, partition):
+def partition_parameters(graph, partition, as_matrices=False):
     """Returns the parameters of the given partition.
 
     `graph` must be an instance of :class:`networkx.Graph`.
@@ -204,12 +204,17 @@ def partition_parameters(graph, partition):
     number of neighbors in block **j** of any fixed vertex in block **i** (the
     particular vertex doesn't matter, since the partition is equitable).
 
+    If `as_matrices` is ``True``, then the parameters will be converted to
+    NumPy matrices.
+
     """
-    vertices_per_partition = {block: len(block) for block in partition}
+    vertices_per_block = {block: len(block) for block in partition}
     block_neighbors = {b_i: {b_j: degree(graph, peek(b_i), b_j)
                              for b_j in partition}
                        for b_i in partition}
-    return vertices_per_partition, block_neighbors
+    if not as_matrices:
+        return vertices_per_block, block_neighbors
+    return _as_vector(vertices_per_block), _as_matrix(block_neighbors)
 
 
 def partition_to_permutation(graph, partition):
@@ -257,6 +262,8 @@ def _as_vector(sizes):
     in a block of the partition. The list is sorted according to the
     lexicographic ordering of the blocks.
 
+    The returned
+
     """
     return np.mat([size for block, size in lexicographic_blocks(sizes)]).T
 
@@ -291,15 +298,14 @@ def are_common_partitions(graph1, partition1, graph2, partition2):
     the vector and the matrix of `partition2`.
 
     """
-    sizes1, block_neighbors1 = partition_parameters(graph1, partition1)
-    sizes2, block_neighbors2 = partition_parameters(graph2, partition2)
-    # Convert `sizes` into a list of length p and `block_neighbors` into a
-    # matrix of size p by p, where p is the number of blocks in the
-    # partitions. The innermost entries of both should be integers.
-    sizes1 = _as_vector(sizes1)
-    sizes2 = _as_vector(sizes2)
-    neighbors1 = _as_matrix(block_neighbors1)
-    neighbors2 = _as_matrix(block_neighbors2)
+    # By specifying `as_matrices=True`, `sizes` becomes a vector of length p
+    # and `block_neighbors` a matrix of size p by p, where p is the number of
+    # blocks in the partitions. The innermost entries of both should be
+    # integers.
+    sizes1, neighbors1 = partition_parameters(graph1, partition1,
+                                              as_matrices=True)
+    sizes2, neighbors2 = partition_parameters(graph2, partition2,
+                                              as_matrices=True)
     # Return true if there is any permutation that makes these two pairs equal.
     match = lambda P: (np.array_equal(sizes1, P * sizes2)
                        and np.array_equal(neighbors1, P * neighbors2))

@@ -19,9 +19,11 @@
 # fraciso.  If not, see <http://www.gnu.org/licenses/>.
 """Unit tests for the :mod:`fraciso.isomorphism` module."""
 from fraciso.isomorphism import are_fractionally_isomorphic
+from fraciso.isomorphism import random_fractionally_isomorphic_graph
 from fraciso.isomorphism import fractionally_isomorphic_graphs
 
 from .helpers import graph_from_file
+from .helpers import skip
 
 
 def test_are_fractionally_isomorphic():
@@ -32,11 +34,17 @@ def test_are_fractionally_isomorphic():
     assert are_fractionally_isomorphic(H, H)
 
 
+def test_random_fractionally_isomorphic_graph():
+    G = graph_from_file('data/test_graph1.txt')
+    for seed in (123, 456, 789):
+        H = random_fractionally_isomorphic_graph(G, seed=seed)
+        assert are_fractionally_isomorphic(G, H)
+
+
+@skip('fractionally_isomorphic_graphs() is not implemented')
 def test_fractionally_isomorphic_graphs():
     G = graph_from_file('data/test_graph1.txt')
     H = graph_from_file('data/test_graph2.txt')
     isomorphic_graphs = list(fractionally_isomorphic_graphs(G))
-    for graph in isomorphic_graphs:
-        print(graph)
     assert G in isomorphic_graphs
     assert H in isomorphic_graphs

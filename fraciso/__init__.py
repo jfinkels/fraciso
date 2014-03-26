@@ -16,5 +16,7 @@
 # You should have received a copy of the GNU General Public License along with
 # fraciso.  If not, see <http://www.gnu.org/licenses/>.
 from fraciso.isomorphism import are_fractionally_isomorphic
-from fraciso.isomorphism import fractionally_isomorphic_graphs
+from fraciso.isomorphism import random_fractionally_isomorphic_graph
+from fraciso.isomorphism import random_fractionally_isomorphic_graphs
+#from fraciso.isomorphism import fractionally_isomorphic_graphs
 from fraciso.partitions import coarsest_equitable_partition

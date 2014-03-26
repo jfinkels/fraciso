@@ -20,12 +20,38 @@ from itertools import product
 
 import numpy as np
 
+#: The data type for each entry in matrices created by functions in this
+#: module.
+DTYPE = np.int32
+
 
 def permutation_matrices(n):
     """Returns an iterator over all possible permutation matrices of size `n`.
 
     """
-    return (np.mat(P) for P in permutations(np.identity(n)))
+    return (np.mat(P) for P in permutations(np.identity(n, dtype=DTYPE)))
+
+
+def permutation_to_matrix(permutation):
+    """Returns a permutation matrix corresponding to the permutation given by
+    the specified dictionary.
+
+    """
+    p = [v for k, v in sorted(permutation.items())]
+    return np.identity(len(p), dtype=DTYPE)[p, :]
+
+
+def random_permutation_matrix(n, seed=None):
+    """Returns a random `n` by `n` permutation matrix.
+
+    If `seed` is specified, it is used to specify the random seed for the
+    pseudorandom number generator.
+
+    """
+    np.random.seed(seed)
+    p = np.random.permutation(n)
+    # Only need to permute the rows, since this is the identity matrix.
+    return np.identity(n, dtype=DTYPE)[p, :]
 
 
 def _sequences_of_ones(n, k):

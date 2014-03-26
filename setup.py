@@ -19,7 +19,7 @@
 from setuptools import setup
 
 #: Installation requirements.
-requirements = ['networkx', 'numpy']
+requirements = ['networkx', 'numpy', 'scipy']
 
 
 setup(

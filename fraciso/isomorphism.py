@@ -16,12 +16,22 @@
 # You should have received a copy of the GNU General Public License along with
 # fraciso.  If not, see <http://www.gnu.org/licenses/>.
 """Algorithms for determining if two graphs are fractionally isomorphic."""
+import itertools
+
+from networkx import get_node_attributes
+from networkx import Graph
 from networkx.convert import from_numpy_matrix
 from networkx.convert import to_numpy_matrix
+from networkx.generators.bipartite import bipartite_configuration_model
+from networkx.generators.random_graphs import random_regular_graph
+import numpy as np
+from scipy.linalg import block_diag
 
+from fraciso.matrices import random_permutation_matrix
+from fraciso.matrices import permutation_to_matrix
 from fraciso.partitions import are_common_partitions
 from fraciso.partitions import coarsest_equitable_partition
-from fraciso.partitions import partition_to_permutation
+from fraciso.partitions import partition_parameters
 
 
 def _fraciso_using_cep(G, H):
@@ -68,42 +78,171 @@ def are_fractionally_isomorphic(G, H, algorithm='cep'):
     raise ValueError('Unknown algorithm: {}'.format(algorithm))
 
 
-def _enumerate(matrix, extents):
-    # TODO could also use partition_parameters() to get row_sums
-    #extents = [0] + extents
-    #pairs = list(zip(extents, extents[1:]))
-    pass
-    #### Other attempts below
-    # # For the sake of brevity, rename this function.
-    # #
-    # # This produces an iterator over all matrices in the same shape as the
-    # # block of `matrix` starting at (m1, n1) and ending at (m2, n2), and with
-    # # the same row sum as each row in that submatrix.
-    # mx = lambda m1, n1, m2, n2: \
-    #     _matrices_with_row_sums(m2 - m1, n2 - n1,
-    #                             _row_sum(matrix, m1, n1, m2, n2))
-    #######
-    # # Mapping from submatrix boundaries to iterator over all possible
-    # # submatrices with the same row sums.
-    # b = {(m1, m2): {(n1, n2): mx(m1, n1, m2, n2) for n1, n2 in pairs}
-    #      for m1, m2 in pairs}
-    # # Mapping from submatrix row boundaries to list of all possible rows.
-    # rows = {(m1, m2): [reduce(_append_matrices, row)
-    #                    for row in product(*
-    #                      lexicographic_blocks(b[(m1, m2)]))]
-    #         for m1, m2 in pairs}
-    # # Iterator over all full matrices.
-    # full = [sum(r) for r in product(*lexicographic_blocks(rows))]
-    # return [Matrix(m) for m in full]
-    ######
-    # # THIS IS TOOO COMPLICATED
-    # return (sum(rows)
-    #         for rows in product(*((
-    #                 reduce(_append_matrices, row_of_blocks)
-    #                 for row_of_blocks in product(*(
-    #                         mx(m1, n1, m2, n2)
-    #                         for n1, n2 in pairs)))
-    #                               for m1, m2 in pairs)))
+def _random_biregular_graph(num_left_vertices, num_right_vertices, left_degree,
+                            right_degree, half_only=False, seed=None):
+    """Returns the adjacency matrix of a random biregular graph with the
+    specified number of left and right vertices, and the specified left and
+    right degree.
+
+    The returned adjacency matrix is a NumPy array (not a list of lists, not a
+    NumPy matrix). If **L** and **R** are the number of left and right vertices
+    respectively and **d** and **e** are the left and right degree
+    respectively, then the returned adjacency matrix has the form::
+
+         _      _
+        |  0   B |
+        |_B^T  0_|
+
+    where B is an L by R matrix in which each row sums to **d** and each column
+    sums to **e**. In this form, the first L nonnegative integers represent the
+    left vertices and the following R integers represent the right vertices.
+
+    If `half_only` is ``True``, this function returns only the submatrix B.
+
+    If `seed` is specified, it must be an integer provided as the seed to the
+    pseudorandom number generator used to generate the graph.
+
+    .. note::
+
+       Although Networkx includes a function for generating random bipartite
+       graphs
+       (:func:`networkx.generators.bipartite.bipartite_configuration_model`),
+       their adjacency matrices do not necessarily have this block form.
+
+    """
+    # Rename some variables for brevity.
+    L, R = num_left_vertices, num_right_vertices
+    n = L + R
+    # Generate a random graph with the appropriate degree sequence.
+    left_sequence = [left_degree for x in range(L)]
+    right_sequence = [right_degree for x in range(R)]
+    # Need to use `create_using=Graph()` or else networkx will create a
+    # multigraph.
+    graph = bipartite_configuration_model(left_sequence, right_sequence,
+                                          create_using=Graph(), seed=seed)
+    # Find the nodes that are in the left and right sets. The `bipartite`
+    # attribute specifies which set each vertex is in.
+    left_or_right = get_node_attributes(graph, 'bipartite')
+    left_nodes = (v for v, side in left_or_right.items() if side == 0)
+    right_nodes = (v for v, side in left_or_right.items() if side == 1)
+    all_nodes = itertools.chain(left_nodes, right_nodes)
+    # Determine the permutation that moves all the left nodes to the top rows
+    # of the matrix and all the right nodes to the bottom rows of the
+    # matrix. The permutation maps row number to vertex that should be in that
+    # row.
+    permutation = {i: v for i, v in enumerate(all_nodes)}
+    P = permutation_to_matrix(permutation)
+    # Apply the permutation matrix to the adjacency matrix.
+    M = to_numpy_matrix(graph)
+    result = P * M
+    # If `half_only` is True, only return the submatrix block consisting of the
+    # first L rows and the last R columns.
+    return result[:L, -R:] if half_only else result
+
+
+def _random_graph_from_parameters(vertices_per_block, block_neighbors,
+                                  seed=None):
+    """Returns a random graph that satisfies the given parameters.
+
+    `vertices_per_block` and `block_neighbors` are the matrices returned by
+    :func:`~fraciso.partitions.partition_parameters`.
+
+    If `seed` is specified, it must be an integer provided as the seed to the
+    pseudorandom number generator used to generate the graph.
+
+    """
+    # TODO there is an alternate way to implement this function: create a
+    # random regular networkx.Graph object for each block of the partition,
+    # create a random biregular Graph object between blocks of the partition,
+    # then compute the union of the two graphs.
+    #
+    # Rename some variables for the sake of brevity.
+    n, D = np.asarray(vertices_per_block), np.asarray(block_neighbors)
+    # p is the number of blocks
+    p = len(n)
+    mat = to_numpy_matrix
+    rr = lambda d, s: random_regular_graph(d, s, seed=seed)
+    rb = lambda L, R, d, e:  _random_biregular_graph(L, R, d, e, True, seed)
+    # Create a block diagonal matrix that has the regular graphs corresponding
+    # to the blocks of the partition along its diagonal.
+    regular_graphs = block_diag(*(mat(rr(d, s))
+                                  for s, d in zip(n, D.diagonal())))
+    # Create a block strict upper triangular matrix containing the upper-right
+    # blocks of the bipartite adjacency matrices.
+    #
+    # First, we create a list containing only the blocks necessary.
+    blocks = [[rb(n[i], n[j], D[i, j], D[j, i]) for j in range(i + 1, p)]
+              for i in range(p - 1)]
+    # Next, we pad the lower triangular entries with blocks of zeros. (We also
+    # need to add an extra block row of all zeros.) At this point, `padded` is
+    # a square list of lists.
+    padded = [[np.zeros((n[i], n[j])) for j in range(p - len(row))] + row
+              for i, row in enumerate(blocks)]
+    padded.append([np.zeros((n[-1], n[i])) for i in range(p)])
+    # To get the block strict upper triangular matrix, we concatenate the block
+    # matrices in each row.
+    biregular_graphs = np.vstack(np.hstack(row) for row in padded)
+    # Finally, we add the regular graphs on the diagonaly, the upper biregular
+    # graphs, and the transpose of the upper biregular graphs in order to get a
+    # graph that has the specified parameters.
+    adjacency_matrix = regular_graphs + biregular_graphs + biregular_graphs.T
+    return from_numpy_matrix(adjacency_matrix)
+
+
+def random_fractionally_isomorphic_graph(graph, seed=None):
+    """Returns a random graph that is fractionally isomorphic to the specified
+    graph.
+
+    This function may return the same graph.
+
+    """
+    # Get the parameters for the coarsest equitable partition of the graph; n
+    # is the vector containing number of vertices in each block of the
+    # partition and D_ij is the matrix containing the degree of any vertex in
+    # block i relative to block j. p is the number of blocks in the partition.
+    partition = coarsest_equitable_partition(graph)
+    n, D = partition_parameters(graph, partition, as_matrices=True)
+    p = len(n)
+    # Permuting the parameters in an arbitrary fashion may produce parameters
+    # for which there is no possible graph. For now, just stick with a random
+    # graph on the same parameters.
+    #
+    ## Choose a random permutation matrix and permute the parameters.
+    #P = random_permutation_matrix(p, seed)
+    #n, D = P * n, P * D
+    #
+    # Get a random graph with those parameters.
+    return _random_graph_from_parameters(n, D, seed)
+
+
+def random_fractionally_isomorphic_graphs(graph, seed=None):
+    """Returns an **infinite** iterator that generates random graphs that are
+    fractionally isomorphic to the specified graph.
+
+    If `seed` is specified, it must be an integer provided as the seed to the
+    pseudorandom number generator used to generate the graph.
+
+    This function may return the same graph.
+
+    """
+    # Get the parameters for the coarsest equitable partition of the graph; n
+    # is the vector containing number of vertices in each block of the
+    # partition and D_ij is the matrix containing the degree of any vertex in
+    # block i relative to block j. p is the number of blocks in the partition.
+    partition = coarsest_equitable_partition(graph)
+    n, D = partition_parameters(graph, partition, as_matrices=True)
+    p = len(n)
+    while True:
+        # Permuting the parameters in an arbitrary fashion may produce
+        # parameters for which there is no possible graph. For now, just stick
+        # with a random graph on the same parameters.
+        #
+        ## Choose a random permutation matrix and permute the parameters.
+        #P = random_permutation_matrix(p, seed)
+        #n_prime, D_prime = P * n, P * D
+        #
+        # Get a random graph with those parameters.
+        yield _random_graph_from_parameters(n, D, seed)
 
 
 def fractionally_isomorphic_graphs(graph):
@@ -112,13 +251,12 @@ def fractionally_isomorphic_graphs(graph):
 
     `graph` must be an instance of :class:`networkx.Graph`.
 
+    .. warning::
+
+       This function is currently not implemented, since it is very difficult
+       to write correct code that enumerates each graph that is fractionally
+       isomorphic to a given graph (that is, it seems that the code will be
+       very complicated).
+
     """
-    partition = coarsest_equitable_partition(graph)
-    permutation, extents = partition_to_permutation(graph, partition)
-    # TODO this would be simpler if we used an adjacency matrix representation
-    block_matrix = permutation * to_numpy_matrix(graph)
-    # At this point, we have the block matrix and the "extents" (the indices
-    # giving the bounds of the blocks of the matrix). Now we enumerate each
-    # possible submatrix with the same row sum.
     raise NotImplementedError
-    return (from_numpy_matrix(M) for M in _enumerate(block_matrix, extents))
