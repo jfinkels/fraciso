@@ -251,9 +251,13 @@ def random_fractionally_isomorphic_graph(graph, seed=None):
     return _random_graph_from_parameters(n, D, seed)
 
 
-def random_fractionally_isomorphic_graphs(graph, seed=None):
-    """Returns an **infinite** iterator that generates random graphs that are
-    fractionally isomorphic to the specified graph.
+def random_fractionally_isomorphic_graphs(graph, number=None, seed=None):
+    """Returns an iterator that generates random graphs that are fractionally
+    isomorphic to the specified graph.
+
+    If `number` is specified, the iterator only generates that number of graphs
+    before it terminates. If it is not specified, it will generate graphs
+    forever!
 
     If `seed` is specified, it must be an integer provided as the seed to the
     pseudorandom number generator used to generate the graph.
@@ -268,17 +272,27 @@ def random_fractionally_isomorphic_graphs(graph, seed=None):
     partition = coarsest_equitable_partition(graph)
     n, D = partition_parameters(graph, partition, as_matrices=True)
     p = len(n)
-    while True:
-        # Permuting the parameters in an arbitrary fashion may produce
-        # parameters for which there is no possible graph. For now, just stick
-        # with a random graph on the same parameters.
-        #
-        ## Choose a random permutation matrix and permute the parameters.
-        #P = random_permutation_matrix(p, seed)
-        #n_prime, D_prime = P * n, P * D
-        #
-        # Get a random graph with those parameters.
-        yield _random_graph_from_parameters(n, D, seed)
+    # This code is almost exactly the same as itertools.repeat(), except that
+    # we execute the _random_graph_from_parameters() function every time
+    # through the loop.
+    if times is None:
+        while True:
+            # Permuting the parameters in an arbitrary fashion may produce
+            # parameters for which there is no possible graph. For now, just
+            # stick with a random graph on the same parameters.
+            #
+            ## Choose a random permutation matrix and permute the parameters.
+            #P = random_permutation_matrix(p, seed)
+            #n_prime, D_prime = P * n, P * D
+            #
+            # Get a random graph with those parameters.
+            yield _random_graph_from_parameters(n, D, seed)
+    else:
+        for i in range(times):
+            # (See the note on permutations above.)
+            #
+            # Get a random graph with those parameters.
+            yield _random_graph_from_parameters(n, D, seed)
 
 
 def fractionally_isomorphic_graphs(graph):
