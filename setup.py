@@ -15,7 +15,14 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # fraciso.  If not, see <http://www.gnu.org/licenses/>.
-"""Algorithms for fractional graph isomorphism."""
+"""Algorithms for fractional graph isomorphism.
+
+* `Documentation <http://readthedocs.org/docs/fraciso>`_
+* `Packaging <http://pypi.python.org/pypi/fraciso>`_
+* `Source code <http://github.com/jfinkels/fraciso>`_
+* `Issues <http://github.com/jfinkels/fraciso/issues>`_
+
+"""
 from setuptools import setup
 
 #: Installation requirements.
