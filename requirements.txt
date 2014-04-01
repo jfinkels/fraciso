@@ -1,6 +1,6 @@
+numpy
+scipy
+networkx
 ecos
 cvxopt
 pulp
-networkx
-numpy
-scipy
