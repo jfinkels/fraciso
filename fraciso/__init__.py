@@ -15,6 +15,14 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # fraciso.  If not, see <http://www.gnu.org/licenses/>.
+
+#: The current version of this extension.
+#:
+#: This should be the same as the version specified in the :file:`setup.py`
+#: file.
+__version__ = '0.0.1-dev'
+
+# The following names are part of the public API.
 from fraciso.isomorphism import are_fractionally_isomorphic
 #from fraciso.isomorphism import fractionally_isomorphic_graphs
 from fraciso.isomorphism import random_fractionally_isomorphic_graph
