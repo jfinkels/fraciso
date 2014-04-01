@@ -56,6 +56,13 @@ Testing
     pip install -r requirements-test.txt
     nosetests
 
+Release instructions
+--------------------
+
+This is a reminder for the maintainer of this package.
+
+    python setup.py egg_info sdist upload --sign
+
 Contact
 -------
 
