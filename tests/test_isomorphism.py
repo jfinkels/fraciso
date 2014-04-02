@@ -36,6 +36,7 @@ except ImportError:
 
 from fraciso.isomorphism import are_fractionally_isomorphic
 from fraciso.isomorphism import random_fractionally_isomorphic_graph
+from fraciso.isomorphism import random_fractionally_isomorphic_graphs
 from fraciso.isomorphism import fractionally_isomorphic_graphs
 from fraciso.isomorphism import verify_isomorphism
 from fraciso.matrices import is_doubly_stochastic
@@ -56,13 +57,6 @@ def _assert_fractionally_isomorphic(algorithm='cep'):
 
 def test_are_fractionally_isomorphic():
     _assert_fractionally_isomorphic()
-
-
-def test_random_fractionally_isomorphic_graph():
-    G = graph_from_file('data/test_graph1.txt')
-    for seed in (123, 456, 789):
-        H = random_fractionally_isomorphic_graph(G, seed=seed)
-        assert are_fractionally_isomorphic(G, H)
 
 
 @skip('ecos gives an approximate solution')
@@ -89,3 +83,18 @@ def test_fractionally_isomorphic_graphs():
     isomorphic_graphs = list(fractionally_isomorphic_graphs(G))
     assert G in isomorphic_graphs
     assert H in isomorphic_graphs
+
+
+def test_random_fractionally_isomorphic_graph():
+    G = graph_from_file('data/test_graph1.txt')
+    for seed in (123, 456, 789):
+        H = random_fractionally_isomorphic_graph(G, seed=seed)
+        assert are_fractionally_isomorphic(G, H)
+
+
+def test_random_fractionally_isomorphic_graphs():
+    G = graph_from_file('data/test_graph1.txt')
+    seed = 123
+    times = 3
+    for H in random_fractionally_isomorphic_graphs(G, times=times, seed=seed):
+        assert are_fractionally_isomorphic(G, H)

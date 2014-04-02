@@ -251,11 +251,11 @@ def random_fractionally_isomorphic_graph(graph, seed=None):
     return _random_graph_from_parameters(n, D, seed)
 
 
-def random_fractionally_isomorphic_graphs(graph, number=None, seed=None):
+def random_fractionally_isomorphic_graphs(graph, times=None, seed=None):
     """Returns an iterator that generates random graphs that are fractionally
     isomorphic to the specified graph.
 
-    If `number` is specified, the iterator only generates that number of graphs
+    If `times` is specified, the iterator only generates that number of graphs
     before it terminates. If it is not specified, it will generate graphs
     forever!
 
