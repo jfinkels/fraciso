@@ -201,8 +201,24 @@ def _random_graph_from_parameters(vertices_per_block, block_neighbors,
     rb = lambda L, R, d, e:  _random_biregular_graph(L, R, d, e, True, seed)
     # Create a block diagonal matrix that has the regular graphs corresponding
     # to the blocks of the partition along its diagonal.
-    regular_graphs = block_diag(*(mat(rr(d, s))
-                                  for s, d in zip(n, D.diagonal())))
+    #
+    # HACK due to a limitation in NetworkX (see
+    # <https://github.com/networkx/networkx/pull/1093>), we need to manually
+    # check for subgraphs with degree 0 and create them as empty graphs. If we
+    # didn't have to do this check, the following code would work:
+    #
+    #     regular_graphs = block_diag(*(mat(rr(d, s))
+    #                                 for s, d in zip(n, D.diagonal())))
+    #
+    # When the bug in NetworkX is fixed, this should be changed to the above.
+    regular_graphs = []
+    for num_nodes, degree in zip(n, D.diagonal()):
+        if degree == 0:
+            graph = empty_graph(num_nodes)
+        else:
+            graph = mat(rr(degree, num_nodes))
+        regular_graphs.append(graph)
+    regular_graphs = block_diag(*regular_graphs)
     # Create a block strict upper triangular matrix containing the upper-right
     # blocks of the bipartite adjacency matrices.
     #
