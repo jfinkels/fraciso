@@ -23,6 +23,7 @@ from networkx import Graph
 from networkx.convert import from_numpy_matrix
 from networkx.convert import to_numpy_matrix
 from networkx.generators.bipartite import bipartite_configuration_model
+from networkx.generators.classic import empty_graph
 from networkx.generators.random_graphs import random_regular_graph
 import numpy as np
 from scipy.linalg import block_diag
@@ -214,7 +215,7 @@ def _random_graph_from_parameters(vertices_per_block, block_neighbors,
     regular_graphs = []
     for num_nodes, degree in zip(n, D.diagonal()):
         if degree == 0:
-            graph = empty_graph(num_nodes)
+            graph = mat(empty_graph(num_nodes))
         else:
             graph = mat(rr(degree, num_nodes))
         regular_graphs.append(graph)
