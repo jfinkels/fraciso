@@ -1,0 +1,5 @@
+These files contain the adjacency matrices of pairs of graphs that are known to
+be fractionally isomorphic. The files `graph1.txt` and `graph2.txt` contain a
+pair of graphs that are fractionally isomorphic but not isomorphic. The files
+`graph3.txt` and `graph4.txt` contain a pair of graphs that are both isomorphic
+and fractionally isomorphic.

@@ -48,9 +48,9 @@ from .helpers import skip_unless
 
 def _assert_fractionally_isomorphic(G=None, H=None, algorithm='cep'):
     if G is None:
-        G = graph_from_file('data/test_graph1.txt')
+        G = graph_from_file('data/graph1.txt')
     if H is None:
-        H = graph_from_file('data/test_graph2.txt')
+        H = graph_from_file('data/graph2.txt')
     are_isomorphic, S = are_fractionally_isomorphic(G, H, algorithm=algorithm)
     assert are_isomorphic
     if algorithm != 'cep':
@@ -87,22 +87,22 @@ def test_cvxopt():
 
 @skip('fractionally_isomorphic_graphs() is not implemented')
 def test_fractionally_isomorphic_graphs():
-    G = graph_from_file('data/test_graph1.txt')
-    H = graph_from_file('data/test_graph2.txt')
+    G = graph_from_file('data/graph1.txt')
+    H = graph_from_file('data/graph2.txt')
     isomorphic_graphs = list(fractionally_isomorphic_graphs(G))
     assert G in isomorphic_graphs
     assert H in isomorphic_graphs
 
 
 def test_random_fractionally_isomorphic_graph():
-    G = graph_from_file('data/test_graph1.txt')
+    G = graph_from_file('data/graph1.txt')
     for seed in (123, 456, 789):
         H = random_fractionally_isomorphic_graph(G, seed=seed)
         assert are_fractionally_isomorphic(G, H)
 
 
 def test_random_fractionally_isomorphic_graphs():
-    G = graph_from_file('data/test_graph1.txt')
+    G = graph_from_file('data/graph1.txt')
     seed = 123
     times = 3
     for H in random_fractionally_isomorphic_graphs(G, times=times, seed=seed):

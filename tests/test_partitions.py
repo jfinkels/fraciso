@@ -22,7 +22,7 @@ from .helpers import graph_from_file
 
 
 def test_coarsest_equitable_partition():
-    G = graph_from_file('data/test_graph1.txt')
+    G = graph_from_file('data/graph1.txt')
     partition = coarsest_equitable_partition(G)
     block1 = frozenset(range(6))
     block2 = frozenset(range(6, 12))
