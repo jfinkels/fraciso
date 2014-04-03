@@ -46,9 +46,11 @@ from .helpers import skip
 from .helpers import skip_unless
 
 
-def _assert_fractionally_isomorphic(algorithm='cep'):
-    G = graph_from_file('data/test_graph1.txt')
-    H = graph_from_file('data/test_graph2.txt')
+def _assert_fractionally_isomorphic(G=None, H=None, algorithm='cep'):
+    if G is None:
+        G = graph_from_file('data/test_graph1.txt')
+    if H is None:
+        H = graph_from_file('data/test_graph2.txt')
     are_isomorphic, S = are_fractionally_isomorphic(G, H, algorithm=algorithm)
     assert are_isomorphic
     if algorithm != 'cep':
@@ -56,6 +58,13 @@ def _assert_fractionally_isomorphic(algorithm='cep'):
 
 
 def test_are_fractionally_isomorphic():
+    # Test some graphs that are isomorphic, and therefore fractionally
+    # isomorphic as well.
+    G = graph_from_file('data/graph3.txt')
+    H = graph_from_file('data/graph4.txt')
+    _assert_fractionally_isomorphic(G, H)
+
+    # Test some graphs that are fractionally isomorphic but not isomorphic.
     _assert_fractionally_isomorphic()
 
 

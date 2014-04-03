@@ -312,7 +312,10 @@ def are_common_partitions(graph1, partition1, graph2, partition2):
                                               as_matrices=True)
     sizes2, neighbors2 = partition_parameters(graph2, partition2,
                                               as_matrices=True)
-    # Return true if there is any permutation that makes these two pairs equal.
+    # Return True if there is any permutation that makes these two pairs equal.
+    # Need to permute both the rows and the columns of the `neighbors` matrix,
+    # so we multiply by the permutation on the left and its inverse on the
+    # right.
     match = lambda P: (np.array_equal(sizes1, P * sizes2)
-                       and np.array_equal(neighbors1, P * neighbors2))
+                       and np.array_equal(neighbors1, P * neighbors2 * P.I))
     return any(match(P) for P in permutation_matrices(len(sizes1)))

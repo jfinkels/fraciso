@@ -246,7 +246,10 @@ def random_fractionally_isomorphic_graph(graph, seed=None):
     """Returns a random graph that is fractionally isomorphic to the specified
     graph.
 
-    This function may return the same graph.
+    This function may return the same graph it received as input. If the
+    coarsest equitable partition of the input graph is the trivial partition
+    (the partition in which each block contains exactly one vertex), then this
+    function always returns the same graph it received as input.
 
     """
     # Get the parameters for the coarsest equitable partition of the graph; n
