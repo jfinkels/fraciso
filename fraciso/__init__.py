@@ -27,5 +27,6 @@ from fraciso.isomorphism import are_fractionally_isomorphic
 #from fraciso.isomorphism import fractionally_isomorphic_graphs
 from fraciso.isomorphism import random_fractionally_isomorphic_graph
 from fraciso.isomorphism import random_fractionally_isomorphic_graphs
+from fraciso.isomorphism import random_graph_from_parameters
 from fraciso.isomorphism import verify_isomorphism
 from fraciso.partitions import coarsest_equitable_partition

@@ -177,8 +177,8 @@ def _random_biregular_graph(num_left_vertices, num_right_vertices, left_degree,
     return result[:L, -R:] if half_only else result
 
 
-def _random_graph_from_parameters(vertices_per_block, block_neighbors,
-                                  seed=None):
+def random_graph_from_parameters(vertices_per_block, block_neighbors,
+                                 seed=None):
     """Returns a random graph that satisfies the given parameters.
 
     `vertices_per_block` and `block_neighbors` are the matrices returned by
@@ -268,7 +268,7 @@ def random_fractionally_isomorphic_graph(graph, seed=None):
     #n, D = P * n, P * D
     #
     # Get a random graph with those parameters.
-    return _random_graph_from_parameters(n, D, seed)
+    return random_graph_from_parameters(n, D, seed)
 
 
 def random_fractionally_isomorphic_graphs(graph, times=None, seed=None):
@@ -293,7 +293,7 @@ def random_fractionally_isomorphic_graphs(graph, times=None, seed=None):
     n, D = partition_parameters(graph, partition, as_matrices=True)
     p = len(n)
     # This code is almost exactly the same as itertools.repeat(), except that
-    # we execute the _random_graph_from_parameters() function every time
+    # we execute the random_graph_from_parameters() function every time
     # through the loop.
     if times is None:
         while True:
@@ -306,13 +306,13 @@ def random_fractionally_isomorphic_graphs(graph, times=None, seed=None):
             #n_prime, D_prime = P * n, P * D
             #
             # Get a random graph with those parameters.
-            yield _random_graph_from_parameters(n, D, seed)
+            yield random_graph_from_parameters(n, D, seed)
     else:
         for i in range(times):
             # (See the note on permutations above.)
             #
             # Get a random graph with those parameters.
-            yield _random_graph_from_parameters(n, D, seed)
+            yield random_graph_from_parameters(n, D, seed)
 
 
 def fractionally_isomorphic_graphs(graph):
