@@ -26,6 +26,7 @@ from itertools import chain
 from itertools import combinations
 from itertools import product
 from itertools import groupby
+from functools import reduce
 
 import numpy as np
 
@@ -40,13 +41,21 @@ def peek(s):
 
 
 def union(*sets):
-    """Returns the union of all sets given as positional arguments."""
+    """Returns the union of all sets given as positional arguments.
+
+    If there is exactly one positional argument, that set itself is returned.
+
+    If there are no positional arguments, the empty set is returned.
+
+    """
     # The last argument to reduce is the initializer used in the case of an
-    # empty sequence of sets.
+    # empty sequence of sets. I would like to use ``{}`` there, but Python
+    # interprets that expression as a dictionary literal instead of a set
+    # literal.
     #
     # This is essentially the same as ``sets[0].union(*sets[1:])``, but it
     # works even if `sets` is not a list and if `sets` has only one element.
-    return reduce(lambda S, T: S | T, sets, {})
+    return reduce(lambda S, T: S | T, sets, set())
 
 
 def are_pairwise_disjoint(*sets):

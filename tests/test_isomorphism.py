@@ -40,6 +40,9 @@ from fraciso.isomorphism import random_fractionally_isomorphic_graphs
 from fraciso.isomorphism import fractionally_isomorphic_graphs
 from fraciso.isomorphism import verify_isomorphism
 from fraciso.matrices import is_doubly_stochastic
+from fraciso.partitions import are_common_partitions
+from fraciso.partitions import is_partition_equitable
+from fraciso.partitions import is_valid_partition
 
 from .helpers import graph_from_file
 from .helpers import skip
@@ -53,19 +56,33 @@ def _assert_fractionally_isomorphic(G=None, H=None, algorithm='cep'):
         H = graph_from_file('data/graph2.txt')
     are_isomorphic, S = are_fractionally_isomorphic(G, H, algorithm=algorithm)
     assert are_isomorphic
-    if algorithm != 'cep':
+    if algorithm == 'cep':
+        partition1, partition2 = S
+        assert is_valid_partition(G, partition1)
+        assert is_valid_partition(H, partition2)
+        assert is_partition_equitable(G, partition1)
+        assert is_partition_equitable(H, partition2)
+        assert are_common_partitions(G, partition1, H, partition2)
+    else:
         assert verify_isomorphism(G, H, S)
 
 
 def test_are_fractionally_isomorphic():
+    # Test some graphs that are fractionally isomorphic but not isomorphic.
+    _assert_fractionally_isomorphic()
+
     # Test some graphs that are isomorphic, and therefore fractionally
     # isomorphic as well.
     G = graph_from_file('data/graph3.txt')
     H = graph_from_file('data/graph4.txt')
     _assert_fractionally_isomorphic(G, H)
 
-    # Test some graphs that are fractionally isomorphic but not isomorphic.
-    _assert_fractionally_isomorphic()
+    # Test for graphs that are not fractionally isomorphic.
+    G = graph_from_file('data/graph4.txt')
+    H = graph_from_file('data/graph5.txt')
+    are_isomorphic, witness = are_fractionally_isomorphic(G, H)
+    assert not are_isomorphic
+    assert witness is None
 
 
 @skip('ecos gives an approximate solution')
@@ -106,4 +123,9 @@ def test_random_fractionally_isomorphic_graphs():
     seed = 123
     times = 3
     for H in random_fractionally_isomorphic_graphs(G, times=times, seed=seed):
+        assert are_fractionally_isomorphic(G, H)
+
+    G = graph_from_file('data/graph5.txt')
+    from networkx.convert import to_numpy_matrix
+    for H in random_fractionally_isomorphic_graphs(G, times=times):
         assert are_fractionally_isomorphic(G, H)
