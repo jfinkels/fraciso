@@ -135,52 +135,6 @@ def is_partition_equitable(graph, partition):
                for block in partition)
 
 
-def _adapt(graph, partition):
-    """Adapt the specified equitable partition into the coarsest equitable one.
-
-    `graph` must be an instance of :class:`networkx.Graph`.
-
-    `partition` is a set of blocks, each of which is a :class:`frozenset` of
-    vertices from the graph.
-
-    """
-    # First, for each vertex, compute the number of neighbors of that vertex in
-    # each block (including its own).
-    block_neighbors = {v: {block: degree(graph, v, block)
-                           for block in partition}
-                       for v in graph}
-    # Second, partition all vertices into new blocks consisting of vertices
-    # that have the same dictionary of block neighbors as computed above.
-    #
-    # We do this by first sorting all the vertices according to their block
-    # neighbors dictionary, then grouping together the vertices that have the
-    # same block neighbors dictionary. However, since dictionaries cannot be
-    # used as sort keys (because they are not comparable), we use the sorted
-    # list of key/value pairs. Even more annoying, the keys in these key/value
-    # pairs are themselves sets, which must be converted to sorted lists
-    # (because the default comparison on sets in Python is the "is subset"
-    # comparison).
-    #
-    # This is quite an inefficient algorithm for doing this, but the reward is
-    # readability to match the mathematical description of the algorithm more
-    # closely.
-    key_func = lambda w: sorted((sorted(k), v)
-                                for k, v in block_neighbors[w].items())
-    vertices = sorted(block_neighbors, key=key_func)
-    # Next, we simply group the vertices according to ones that have the same
-    # block neighbors dictionary.
-    new_partition = {frozenset(g) for k, g in groupby(vertices, key_func)}
-
-    # Do a sanity check...
-    #assert is_valid_partition(new_partition)
-
-    # If this process produced exactly the same partition, then we have reached
-    # the base case of the recursion.
-    if new_partition == partition:
-        return partition
-    return _adapt(graph, new_partition)
-
-
 def coarsest_equitable_partition(graph):
     """Returns the coarsest equitable partition of the specified graph.
 
@@ -197,12 +151,46 @@ def coarsest_equitable_partition(graph):
     of a block of P1. A partition is a coarsest equitable partition if it is
     equitable and no coarser partition is equitable.
 
+    **Implementation note**: this function applies the "canonical color
+    refinement" algorithm described in the 2013 paper **`Tight Lower and Upper
+    Bounds for the Complexity of Canonical Colour Refinement`_** by Berkholz,
+    Bonsma, and Grohe. If implemented correctly, this algorithm has a
+    worst-case running time of **O((m + n) log n)**, where **m** is the number
+    of edges in the graph and **n** the number of vertices. (This algorithm
+    works for both directed and undirected graphs.)
+
+    .. _color-refinement: http://dx.doi.org/10.1007/978-3-642-40450-4_13
+
+    __ color-refinement_
+
     """
-    # Start with the partition that consists of a single block containing the
-    # entire vertex set. Recursively adapt the partition until no further
-    # adaptations are possible. This is guaranteed to be the coarsest equitable
-    # partition.
-    return _adapt(graph, {frozenset(graph)})
+    num_vertices = len(G)
+    # In the canonical color refinement algorithm, the blocks of the partition
+    # are interpreted as colors. Initially, all vertices have the same color
+    # (that is, the partition is the unit partition). Then, vertices of one
+    # color are iteratively recolored according to the number of neighbors of
+    # each vertex.
+    #
+    # Create a stack that will maintain colors that should be still be used as
+    # a refining color. Initially, there is just one color, the color 1 (and
+    # all vertices have this color).
+    #
+    # TODO rename S_refine to colors_to_be_refined
+    S_refine = [(0, list(G))]
+    # The algorithm terminates when there are no more colors to be refined.
+    while len(S_refine) > 0:
+        # Pop the next color `r` and the vertices with that color from the
+        # stack.
+        r, r_vertices = S_refine.pop()
+        # Maintain an array of the `r`-degree of each vertex (the number of
+        # neighbors of color `r` that a vertex has). Initialize it to 0.
+        cdeg = [0 for n in num_vertices]
+        # Compute the `r`-degrees of each vertex.
+        for v in r_vertices:
+            for w in G:
+                if G.has_edge(w, v):
+                    cdeg[w] += 1
+    # TODO complete this!!!
 
 
 def partition_parameters(graph, partition, as_matrices=False):
