@@ -46,6 +46,6 @@ setup(
     test_suite='nose.collector',
     tests_require=['nose'],
     url='https://github.com/jfinkels/fraciso',
-    version='0.0.7',
+    version='0.0.8-dev',
     zip_safe=False
 )
