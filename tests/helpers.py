@@ -18,7 +18,7 @@
 """Helper functions for unit tests."""
 import os.path
 
-from networkx.convert import from_numpy_matrix
+from networkx import from_numpy_matrix
 from nose import SkipTest
 from numpy import loadtxt
 

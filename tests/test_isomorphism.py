@@ -126,6 +126,6 @@ def test_random_fractionally_isomorphic_graphs():
         assert are_fractionally_isomorphic(G, H)
 
     G = graph_from_file('data/graph5.txt')
-    from networkx.convert import to_numpy_matrix
+    from networkx import to_numpy_matrix
     for H in random_fractionally_isomorphic_graphs(G, times=times):
         assert are_fractionally_isomorphic(G, H)

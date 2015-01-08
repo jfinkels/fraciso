@@ -1,6 +1,6 @@
 numpy
 scipy
-networkx
+networkx>=1.9.1
 ecos
 cvxopt
 pulp

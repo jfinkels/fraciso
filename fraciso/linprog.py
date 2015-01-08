@@ -31,7 +31,7 @@ try:
     ecos_available = True
 except ImportError:
     ecos_available = False
-from networkx.convert import to_numpy_matrix
+from networkx import to_numpy_matrix
 import numpy as np
 try:
     #from pulp import COIN

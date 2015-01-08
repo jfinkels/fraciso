@@ -20,11 +20,11 @@ import itertools
 
 from networkx import get_node_attributes
 from networkx import Graph
-from networkx.convert import from_numpy_matrix
-from networkx.convert import to_numpy_matrix
-from networkx.generators.bipartite import bipartite_configuration_model
-from networkx.generators.classic import empty_graph
-from networkx.generators.random_graphs import random_regular_graph
+from networkx import from_numpy_matrix
+from networkx import to_numpy_matrix
+from networkx import bipartite_configuration_model
+from networkx import empty_graph
+from networkx import random_regular_graph
 import numpy as np
 from scipy.linalg import block_diag
 
@@ -202,24 +202,8 @@ def random_graph_from_parameters(vertices_per_block, block_neighbors,
     rb = lambda L, R, d, e:  _random_biregular_graph(L, R, d, e, True, seed)
     # Create a block diagonal matrix that has the regular graphs corresponding
     # to the blocks of the partition along its diagonal.
-    #
-    # HACK due to a limitation in NetworkX (see
-    # <https://github.com/networkx/networkx/pull/1093>), we need to manually
-    # check for subgraphs with degree 0 and create them as empty graphs. If we
-    # didn't have to do this check, the following code would work:
-    #
-    #     regular_graphs = block_diag(*(mat(rr(d, s))
-    #                                 for s, d in zip(n, D.diagonal())))
-    #
-    # When the bug in NetworkX is fixed, this should be changed to the above.
-    regular_graphs = []
-    for num_nodes, degree in zip(n, D.diagonal()):
-        if degree == 0:
-            graph = mat(empty_graph(num_nodes))
-        else:
-            graph = mat(rr(degree, num_nodes))
-        regular_graphs.append(graph)
-    regular_graphs = block_diag(*regular_graphs)
+    regular_graphs = block_diag(*(mat(rr(d, s))
+                                for s, d in zip(n, D.diagonal())))
     # Create a block strict upper triangular matrix containing the upper-right
     # blocks of the bipartite adjacency matrices.
     #
