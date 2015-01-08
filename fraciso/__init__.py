@@ -20,7 +20,7 @@
 #:
 #: This should be the same as the version specified in the :file:`setup.py`
 #: file.
-__version__ = '0.0.7-dev'
+__version__ = '0.0.7'
 
 # The following names are part of the public API.
 from fraciso.isomorphism import are_fractionally_isomorphic
